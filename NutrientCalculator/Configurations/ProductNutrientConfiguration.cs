@@ -10,8 +10,7 @@ public class ProductNutrientConfiguration: IEntityTypeConfiguration<ProductNutri
     {
         builder.HasKey(pn => new { pn.ProductId, pn.NutrientId });
         builder.Property(pn => pn.Amount)
-               .IsRequired()
-               .HasDefaultValue(0.0);
+               .IsRequired();
 
     }
 }
