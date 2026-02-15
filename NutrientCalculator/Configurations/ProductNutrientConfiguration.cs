@@ -11,6 +11,11 @@ public class ProductNutrientConfiguration: IEntityTypeConfiguration<ProductNutri
         builder.HasKey(pn => new { pn.ProductId, pn.NutrientId });
         builder.Property(pn => pn.Amount)
                .IsRequired();
-
+        builder.HasOne(pn => pn.Product)
+               .WithMany(pn => pn.ProductNutrients);
+        builder.HasOne(pn => pn.Nutrient)
+               .WithMany(pn => pn.ProductNutrients);
+        builder.Property(pn=> pn.Amount)
+               .HasPrecision(10, 4);
     }
 }

@@ -1,0 +1,16 @@
+﻿@model List<ProductEntity>
+
+<h1>Products</h1>
+
+<ul>
+    @foreach(var p in Model)
+    {
+        <li>
+            <a asp-controller="Product"
+               asp-action="Details"
+               asp-route-id="@p.Id">
+                @p.Name (@p.State)
+            </a>
+        </li>
+    }
+</ul>

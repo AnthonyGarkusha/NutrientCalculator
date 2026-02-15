@@ -2,7 +2,6 @@
 
 public class ProductNutrientEntity
 {
-    // Составной ключ: ProductId + NutrientId (укажем в конфигурации)
     public Guid ProductId { get; set; }
     public ProductEntity? Product { get; set; }
 
@@ -10,5 +9,5 @@ public class ProductNutrientEntity
     public NutrientEntity? Nutrient { get; set; }
 
     // Значение количества нутриента в продукте
-    public double Amount { get; set; }
+    public decimal Amount { get; set; }
 }

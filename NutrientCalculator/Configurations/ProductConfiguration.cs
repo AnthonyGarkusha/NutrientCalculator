@@ -12,7 +12,12 @@ public class ProductConfiguration: IEntityTypeConfiguration<ProductEntity>
         builder
             .HasMany(p => p.ProductNutrients)
             .WithOne(pn => pn.Product)
-            .HasForeignKey(pn => pn.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(p => p.MealProducts)
+            .WithOne(mp => mp.Product)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasMany(p => p.RationProducts)
+            .WithOne(rp => rp.Product)
             .OnDelete(DeleteBehavior.Cascade);
     }
 

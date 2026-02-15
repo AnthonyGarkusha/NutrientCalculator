@@ -1,17 +1,18 @@
-﻿using NutrientCalculator.Models;
+﻿using ClosedXML.Excel;
+using Microsoft.EntityFrameworkCore;
 using NutrientCalculator;
-using ClosedXML.Excel;
+using NutrientCalculator.Models;
 
-namespace NutrientCalculator.DataSeeds
+namespace NutrientCalculator.DataSeeds;
+
+static public class SeedRuner
 {
-    public class SeedRuner()
-    {
 
-        static async public Task<bool> NutrientSeed(AppDBContext dBContext)
-        {
-            if(dBContext.Nutrients.Any()) 
-                return false;
-            var nutrients = new List<NutrientEntity>
+    static async public Task<bool> NutrientSeed(AppDBContext dBContext)
+    {
+        if(await dBContext.Nutrients.AnyAsync())
+            return false;
+        var nutrients = new List<NutrientEntity>
             {
                 new() { Name = "Вода",                              UnitType = UnitTypes.g,    NutrientType = NutrientTypes.Macro,                  Essential = true },     //Общие                     //Вода, г
                 new() { Name = "Энергия",                           UnitType = UnitTypes.kkal, NutrientType = NutrientTypes.Macro,                  Essential = true },     //Энергия, кКал
@@ -77,75 +78,74 @@ namespace NutrientCalculator.DataSeeds
 
             };
 
-            dBContext.Nutrients.RemoveRange(dBContext.Nutrients);
-            dBContext.Nutrients.AddRange(nutrients);
-            await dBContext.SaveChangesAsync();
+        dBContext.Nutrients.RemoveRange(dBContext.Nutrients);
+        dBContext.Nutrients.AddRange(nutrients);
+        await dBContext.SaveChangesAsync();
 
-            Console.WriteLine("Nutrients filled");
-            return true;
-        }
+        Console.WriteLine("Nutrients filled");
+        return true;
+    }
 
-        static public async Task<bool> ProductSeed(AppDBContext _dbContext, string FileName = "Nutrient_Table.xlsx")
+    static public async Task<bool> ProductSeed(AppDBContext _dbContext, string FileName = "Nutrient_Table.xlsx")
+    {
+
+        if(await _dbContext.Products.AnyAsync())
+            return false;
+
+        using var workbook = new XLWorkbook(@"Dataseeds/" + FileName);
+        if(workbook == null) return false;
+
+        var nutrients = await _dbContext.Nutrients.ToListAsync();
+
+        foreach(var workSheet in workbook.Worksheets)
         {
-            if(_dbContext.Products.Any())
-                return false;
-
-            using var workbook = new XLWorkbook(@"Dataseeds/" + FileName);
-            if(workbook == null) return false;
-
-            var products = new List<ProductEntity>();
-            var nutrients = _dbContext.Nutrients.ToList();
-
-            foreach(var workSheet in workbook.Worksheets)
+            string CategoryName = workSheet.Name;
+            string tempName = string.Empty;
+            for(int colunmNumber = 4; colunmNumber <= workSheet.LastColumnUsed().ColumnNumber(); colunmNumber++)
             {
-                string CategoryName = workSheet.Name;
-                string tempName = string.Empty;
-                for(int colunmNumber = 4; colunmNumber <= workSheet.LastColumnUsed().ColumnNumber(); colunmNumber++)
+                string Name = string.Empty;
+                string State = string.Empty;
+
+                // Попробуем прочесть название/состояние
+                workSheet.Cell(1, colunmNumber).TryGetValue<string>(out Name);
+                if(string.IsNullOrWhiteSpace(Name))
+                    Name = tempName;
+                else
+                    tempName = Name;
+                workSheet.Cell(2, colunmNumber).TryGetValue<string>(out State);
+
+                var product = new ProductEntity
                 {
-                    string Name = string.Empty;
-                    string State = string.Empty;
+                    Name = Name,
+                    State = State,
+                    CategoryType = CategoryName,
+                    ProductNutrients = new List<ProductNutrientEntity>()
+                };
 
-                    // Попробуем прочесть название/состояние
-                    workSheet.Cell(1, colunmNumber).TryGetValue<string>(out Name);
-                    if(Name == "")
-                        Name = tempName;
-                    else
-                        tempName = Name;
-                    workSheet.Cell(2, colunmNumber).TryGetValue<string>(out State);
-
-                    var product = new ProductEntity
+                for(int row = 5; row < workSheet.LastRowUsed().RowNumber(); row++)
+                {
+                    if(workSheet.Cell(row, colunmNumber).TryGetValue<decimal>(out decimal s) && s != 0)
                     {
-                        Name = Name,
-                        State = State,
-                        CategoryType = CategoryName,
-                        ProductNutrients = []
-                    };
-
-                    for(int row = 5; row < workSheet.LastRowUsed().RowNumber(); row++)
-                    {
-                        if(workSheet.Cell(row, colunmNumber).TryGetValue<double>(out double s) && s != 0d)
+                        workSheet.Cell(row, 1).TryGetValue<string>(out string nutrientName);
+                        var nutrient = nutrients.FirstOrDefault(n => nutrientName.Contains(n.Name));
+                        if(nutrient != null)
                         {
-                            workSheet.Cell(row, 1).TryGetValue<string>(out string nutrientName);
-                            var nutrient = nutrients.FirstOrDefault(n => nutrientName.Contains(n.Name));
-                            if(nutrient != null)
+                            product.ProductNutrients.Add(new ProductNutrientEntity
                             {
-                                product.ProductNutrients.Add(new ProductNutrientEntity
-                                {
-                                    Product = product,
-                                    Nutrient = nutrient,
-                                    Amount = s
-                                });
-                            }
+                                Product = product,
+                                Nutrient = nutrient,
+                                Amount = s
+                            });
                         }
                     }
-                    if(product.ProductNutrients.Count > 0)
-                    {
-                        await _dbContext.Products.AddAsync(product);
-                    }
+                }
+                if(product.ProductNutrients.Count > 0)
+                {
+                    _dbContext.Products.Add(product);
                 }
             }
-            await _dbContext.SaveChangesAsync();
-            return true;
         }
+        await _dbContext.SaveChangesAsync();
+        return true;
     }
 }

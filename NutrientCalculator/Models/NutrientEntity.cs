@@ -29,6 +29,7 @@ namespace NutrientCalculator.Models
         public required NutrientTypes NutrientType { get; set; }
         public bool Essential { get; set; } = false;
         public ICollection<ProductNutrientEntity> ProductNutrients { get; set; } = [];
+        public decimal Norma { get; set; }
     }
 
 }

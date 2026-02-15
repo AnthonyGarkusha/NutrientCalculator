@@ -12,7 +12,8 @@ public class NutrientConfiguration: IEntityTypeConfiguration<NutrientEntity>
         builder
             .HasMany(n => n.ProductNutrients)
             .WithOne(pn => pn.Nutrient)
-            .HasForeignKey(pn => pn.NutrientId)
             .OnDelete(DeleteBehavior.Cascade);
+        builder.Property(n => n.Norma)
+               .HasPrecision(10, 4);
     }
 }

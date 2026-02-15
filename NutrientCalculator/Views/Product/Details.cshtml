@@ -1,0 +1,18 @@
+﻿@model ProductEntity
+
+<h2>@Model.Name Details (@Model.State)</h2>
+
+<table border="1">
+    <tr>
+        <th>Nutrient</th>
+        <th>Amount</th>
+    </tr>
+    @foreach(var n in Model.ProductNutrients)
+    {
+        <tr>
+            <td>@n.Nutrient.Name</td>
+            <td>@n.Amount</td>
+        </tr>
+    }
+</table>
+
