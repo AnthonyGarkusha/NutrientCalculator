@@ -1,0 +1,23 @@
+﻿@model UserEntity
+
+<div class="container mt-4">
+
+    <!-- Информация о пользователе -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h3>@Model.Name</h3>
+            <p class="text-muted">@Model.Email</p>
+        </div>
+    </div>
+
+    <!-- Две колонки -->
+    <div class="row">
+
+        <!-- Блюда -->
+        <partial name="_UserMeals" model="@Model" />
+
+        <!-- Рационы -->
+        <partial name="_UserRations" model="@Model" />
+
+    </div>
+</div>

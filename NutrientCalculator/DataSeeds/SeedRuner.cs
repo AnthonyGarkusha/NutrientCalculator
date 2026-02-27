@@ -7,11 +7,24 @@ namespace NutrientCalculator.DataSeeds;
 
 static public class SeedRuner
 {
-
-    static async public Task<bool> NutrientSeed(AppDBContext dBContext)
+    static async public Task RunAllIfNeed(AppDBContext dBContext)
     {
-        if(await dBContext.Nutrients.AnyAsync())
-            return false;
+        if(await dBContext.Nutrients.AnyAsync()) 
+            await NutrientSeed(dBContext);
+        if(await dBContext.Products.AnyAsync())
+            await ProductSeed(dBContext);
+    }
+
+    static async public Task RunAllHardRestart(AppDBContext dBContext)
+    {
+        await NutrientSeed(dBContext, ReSeed: true);
+        await ProductSeed(dBContext,  ReSeed: true);
+    }
+    static async public Task<bool> NutrientSeed(AppDBContext dBContext, bool ReSeed = false)
+    {
+        if(ReSeed) dBContext.Nutrients.RemoveRange(dBContext.Nutrients);
+        if(await dBContext.Nutrients.AnyAsync()) return false;
+
         var nutrients = new List<NutrientEntity>
             {
                 new() { Name = "Вода",                              UnitType = UnitTypes.g,    NutrientType = NutrientTypes.Macro,                  Essential = true },     //Общие                     //Вода, г
@@ -78,17 +91,15 @@ static public class SeedRuner
 
             };
 
-        dBContext.Nutrients.RemoveRange(dBContext.Nutrients);
         dBContext.Nutrients.AddRange(nutrients);
         await dBContext.SaveChangesAsync();
 
-        Console.WriteLine("Nutrients filled");
         return true;
     }
 
-    static public async Task<bool> ProductSeed(AppDBContext _dbContext, string FileName = "Nutrient_Table.xlsx")
+    static public async Task<bool> ProductSeed(AppDBContext _dbContext, string FileName = "Nutrient_Table.xlsx", bool ReSeed = false)
     {
-
+        if(ReSeed) _dbContext.Products.RemoveRange(_dbContext.Products);
         if(await _dbContext.Products.AnyAsync())
             return false;
 

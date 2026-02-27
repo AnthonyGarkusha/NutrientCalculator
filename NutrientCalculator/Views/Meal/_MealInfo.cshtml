@@ -1,0 +1,14 @@
+﻿@model MealEntity
+<input type="hidden" asp-for="UserId" />
+<div
+    <label asp-for="Name"></label>
+    <input asp-for="Name" />
+    <span asp-validation-for="Name" class="text-danger"></span>
+</div>
+
+<ul id="productList">
+    @foreach(var p in Model.MealProducts)
+    {
+        <li>@p.Product.Name (@p.Product.State) — @p.Amount г</li>
+    }
+</ul>

@@ -1,0 +1,31 @@
+﻿@model List<UserEntity>
+
+<h1>Users</h1>
+
+<a asp-controller="User"
+   asp-action="Create"
+   class="btn btn-primary">
+    ➕ Добавить пользователя
+</a>
+
+<table border="2">
+    <tr>
+        <th>User</th>
+        <th>Id</th>
+    </tr>
+    @foreach(var u in Model)
+    {
+        <tr>
+            <td>
+                <a asp-controller="User"
+                   asp-action="Details"
+                   asp-route-id="@u.Id">
+                   @u.Name
+                </a>
+            </td>
+            <td>
+                @u.Id
+            </td>
+        </tr>
+    }
+</table>

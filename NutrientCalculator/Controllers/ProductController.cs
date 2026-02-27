@@ -28,5 +28,4 @@ public class ProductController(AppDBContext context): Controller
         }
         return View(product);
     }
-
 }

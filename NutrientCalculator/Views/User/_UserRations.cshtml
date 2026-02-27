@@ -1,0 +1,24 @@
+﻿@model UserEntity
+
+
+<div class="col-md-6">
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+            Рационы
+        </div>
+        <ul class="list-group list-group-flush">
+            @foreach(var ration in Model.Rations)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @ration.Name
+                    <a asp-controller="Ration"
+                       asp-action="Details"
+                       asp-route-id="@ration.Id"
+                       class="btn btn-sm btn-outline-success">
+                        Открыть
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+</div>

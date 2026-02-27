@@ -1,0 +1,199 @@
+﻿@using NutrientCalculator.Controllers;
+@model MealDto
+
+<form asp-action="Save" method="post">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="UserId" />
+    <a asp-controller="User"
+       asp-action="Details"
+       asp-route-id="@Model.UserId"
+       class="btn btn-secondary">⬅️</a>
+    <div>
+        <div>
+            <input asp-for="Name" />
+            <button type="submit">💾 Сохранить</button>
+        </div>
+
+        <h3>Продукты</h3>
+        <div id="productsContainer" onload="fillProducts()"></div>
+
+    </div>
+</form>
+
+<div id="addForm"> </div>
+<button type="button" onclick="showAddForm()">➕ Добавить продукт</button>
+
+<script>
+        // Получаем контейнеры
+        const ProductsContainer = document.getElementById("productsContainer");
+        const AddForm = document.getElementById("addForm");
+
+        function showAddForm() {
+            const row = document.createElement("div");
+            row.style.marginTop = "1px";
+            row.className = "addRow";
+
+            const searchBox = document.createElement("input");
+            searchBox.className = "searchBox";
+            searchBox.type = "text";
+            searchBox.placeholder = "Введите продукт...";
+            searchBox.dataset.product = "";
+            searchBox.addEventListener("input", inputListener);
+            row.appendChild(searchBox);
+
+            const amountBox = document.createElement("input");
+            amountBox.className = "amountBox";
+            amountBox.type = "number";
+            amountBox.step = "1";
+            amountBox.placeholder = "граммы";
+            amountBox.min = "0";
+            row.appendChild(amountBox);
+
+            const buttonAdd = document.createElement("button");
+            buttonAdd.type = "button";
+            // При клике добавляем продукт и удаляем форму
+            buttonAdd.onclick = (e) => {
+                addProduct(e);
+                row.remove();
+            };
+            buttonAdd.textContent = "[➕]";
+            row.appendChild(buttonAdd);
+
+            const buttonRemove = document.createElement("button");
+            buttonRemove.type = "button";
+            buttonRemove.onclick = () => row.remove();
+            buttonRemove.textContent = "[❌]";
+            row.appendChild(buttonRemove);
+
+            AddForm.appendChild(row);
+        }
+
+        function removeRow(btn) {
+            const row = btn.closest(".productRow");
+            if (row) {
+                row.remove();
+                reindex();
+            }
+        }
+
+        async function inputListener(event) {
+            const text = event.target.value;
+            if (!text || text.length < 1) {
+                // Удаляем старые результаты если введено пусто
+                const old = event.target.parentNode.querySelector(".results");
+                if (old) old.remove();
+                event.target.dataset.product = "";
+                return;
+            }
+
+            // Запрос к API
+            const response = await fetch(`/api/products/search?query=${encodeURIComponent(text)}`);
+            if (!response.ok) return;
+            const data = await response.json();
+
+            // Найти старые результаты и удалить
+            const addRow = event.target.closest(".addRow");
+            const oldResults = addRow ? addRow.querySelector(".results") : null;
+            if (oldResults) oldResults.remove();
+
+            const results = document.createElement("div");
+            results.className = "results";
+
+            data.forEach(p => {
+                const div = document.createElement("div");
+                div.textContent = p.name + " (" + (p.state ?? "") + ")";
+                div.style.cursor = "pointer";
+                div.onclick = () => {
+                    // Сохраняем выбранный продукт как JSON-строку в data атрибут
+                    event.target.dataset.product = JSON.stringify(p);
+                    event.target.value = p.name;
+                    if (results) results.remove();
+                };
+                results.appendChild(div);
+            });
+
+            event.target.parentNode.appendChild(results);
+        }
+
+        function addProduct(e) {
+            const addRowContainer = e.target.closest(".addRow");
+            if (!addRowContainer) return;
+
+            const searchBox = addRowContainer.querySelector(".searchBox");
+            const amountBox = addRowContainer.querySelector(".amountBox");
+            if (!searchBox) return;
+
+            const selectedJson = searchBox.dataset.product;
+            if (!selectedJson) return; // ничего не выбрано
+
+            let selectedProduct;
+            try {
+                selectedProduct = JSON.parse(selectedJson);
+            } catch {
+                return;
+            }
+
+            const index = ProductsContainer.children.length;
+
+            const row = document.createElement("div");
+            row.className = "productRow";
+
+            // Собираем безопасный текст для отображения (экранируем значения)
+            const displayName = (selectedProduct.name ?? "") + (selectedProduct.state ? " " + selectedProduct.state : "");
+
+            row.innerHTML = `
+                <input type="hidden" name="Products[${index}].ProductId" value="${selectedProduct.id}" />
+                <input name="Products[${index}].ProductName" value="${htmlEncode(displayName)}" readonly />
+                <input name="Products[${index}].Amount" value="${htmlEncode(amountBox.value || 0)}" step="1" />
+                <button type="button" onclick="removeRow(this)">❌</button>
+            `;
+
+            ProductsContainer.appendChild(row);
+
+            // Очистка полей в форме добавления
+            searchBox.dataset.product = "";
+            searchBox.value = "";
+            amountBox.value = "";
+        }
+
+        //Переиндексация полей после удаления
+        function reindex() {
+            const rows = document.querySelectorAll("#productsContainer .productRow");
+            rows.forEach((row, i) => {
+                row.querySelectorAll("input").forEach(input => {
+                    if (!input.name) return;
+                    input.name = input.name.replace(/Products\[\d+\]/, `Products[${i}]`);
+                });
+            });
+        }
+        // Простая функция для HTML-экранирования
+        function htmlEncode(str) {
+            if (str == null) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/"/g, "&quot;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+        }
+
+        // Функция для заполнения существующих продуктов при загрузке страницы (если редактирование)
+        function fillProducts() {
+            console.log("fillProducts() loaded");
+            const existingProducts = @Html.Raw(Json.Serialize(Model.Products));
+            existingProducts.forEach((mp, index) => {
+                const row = document.createElement("div");
+                row.className = "productRow";
+                const displayName = (mp.name ?? "") + (mp.state ? " " + mp.state : "");
+                row.innerHTML = `
+                    <input type="hidden" name="Products[${index}].ProductId" value="${mp.productId}" />
+                    <input name="Products[${index}].Name" value="${htmlEncode(displayName)}" readonly />
+                    <input name="Products[${index}].Amount" value="${htmlEncode(mp.amount)}" step="1" />
+                    <button type="button" onclick="removeRow(this)">❌</button>
+                `;
+                ProductsContainer.appendChild(row);
+            });
+        }
+    document.addEventListener("DOMContentLoaded", function () {
+            fillProducts();
+        });
+</script>

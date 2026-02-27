@@ -1,0 +1,39 @@
+﻿@model UserEntity
+
+<div class="col-md-6">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between">
+            <span>Блюда</span>
+            <a asp-controller="Meal"
+               asp-action="Create"
+               asp-route-id="@Model.Id"
+               class="btn btn-sm btn-light">
+                ➕
+            </a>
+        </div>
+        <ul class="list-group list-group-flush">
+            @foreach(var meal in Model.Meals)
+            {
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    @meal.Name
+                    <form asp-controller="Meal"
+                          asp-action="Delete"
+                          method="post" class="mb-0 ">
+                        <input type="hidden" name="id" value="@meal.Id" />
+                        <button type="submit" class="btn-sm btn "
+                                onclick="return confirm('Удалить блюдо?');">
+                            ❌
+                        </button>
+                    </form>
+                    <a asp-controller="Meal"
+                       asp-action="Details"
+                       asp-route-id="@meal.Id"
+                       class="btn btn-sm btn-outline-primary">
+                        Открыть
+                    </a>
+
+                </li>
+            }
+        </ul>
+    </div>
+</div>

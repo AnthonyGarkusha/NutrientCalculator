@@ -29,11 +29,10 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Product}/{action=Index}/{id?}")
+    pattern: "{controller=Home}/{action=Index}/{id?}")
     .WithStaticAssets();
 
-await SeedRuner.NutrientSeed(app.Services.CreateScope().ServiceProvider.GetRequiredService<AppDBContext>());
-await SeedRuner.ProductSeed(app.Services.CreateScope().ServiceProvider.GetRequiredService<AppDBContext>());
+await SeedRuner.RunAllIfNeed(app.Services.CreateScope().ServiceProvider.GetRequiredService<AppDBContext>());
 
 await app.RunAsync();
 
